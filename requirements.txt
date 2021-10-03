@@ -1,0 +1,8 @@
+timm
+pytorch
+matplotlib
+Pillow
+opencv
+uvicorn
+fastapi
+python-multipart	
