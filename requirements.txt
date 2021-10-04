@@ -1,8 +1,8 @@
-timm
-pytorch
-matplotlib
-Pillow
-opencv
-uvicorn
-fastapi
-python-multipart	
+timm==0.4.12
+torch==1.9.1
+matplotlib==3.4.2
+Pillow==8.3.2
+opencv==4.5.4.56
+uvicorn==0.15.0
+fastapi==0.68.1
+python-multipart==0.0.5	

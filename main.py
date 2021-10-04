@@ -18,9 +18,17 @@ from matplotlib.figure import Figure
 
 # Load model
 
-# model_type = "DPT_Large"     # MiDaS v3 - Large     (highest accuracy, slowest inference speed)
-# model_type = "DPT_Hybrid"   # MiDaS v3 - Hybrid    (medium accuracy, medium inference speed)
-model_type = "MiDaS_small"  # MiDaS v2.1 - Small   (lowest accuracy, highest inference speed)
+# MiDaS v3 - Large
+# (highest accuracy, slowest inference speed)
+
+# model_type = "DPT_Large"
+
+# MiDaS v3 - Hybrid
+# (medium accuracy, medium inference speed)
+# model_type = "DPT_Hybrid"
+
+# (lowest accuracy, highest inference speed)
+model_type = "MiDaS_small"  # MiDaS v2.1 - Small
 
 midas = torch.hub.load("intel-isl/MiDaS", model_type)
 
@@ -37,54 +45,85 @@ else:
 # Code from: https://fastapi.tiangolo.com/tutorial/request-files/
 app = FastAPI()
 
+
 @app.post("/uploadfiles/")
-
 async def create_upload_files(files: List[UploadFile] = File(...)):
+    """ Create API endpoint to send image to and specify
+     what type of file it'll take
 
-	for image in files:
-		img = cv2.imdecode(np.frombuffer(image.file.read(), np.uint8), cv2.IMREAD_COLOR)
-		img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    :param files: Get image files, defaults to File(...)
+    :type files: List[UploadFile], optional
+    :return: A list of png images
+    :rtype: list(bytes)
+    """
 
-		input_batch = transform(img).to(device)
+    for image in files:
 
-		with torch.no_grad():
-			prediction = midas(input_batch)
+        # Load image
+        img = cv2.imdecode(np.frombuffer(image.file.read(),
+                                         np.uint8),
+                           cv2.IMREAD_COLOR)
 
-			prediction = torch.nn.functional.interpolate(
-				prediction.unsqueeze(1),
-				size=img.shape[:2],
-				mode="bicubic",
-				align_corners=False,
-			).squeeze()
+        # convert it to the correct format
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-		fig = Figure()
-		canvas = FigureCanvas(fig)
-		ax = fig.gca()
+        # Transform it so that it can be used by the model
+        input_batch = transform(img).to(device)
 
-		output = prediction.cpu().numpy()
-		ax.imshow(img)
-		ax.imshow(output, cmap="jet", alpha=0.9)
-		ax.axis("off")
-		canvas.draw()
-		canvas.show()
-		output_image = np.fromstring(canvas.tostring_rgb(), dtype='uint8')
-		res, im_png = cv2.imencode(".jpg", output_image)
-		return StreamingResponse(io.BytesIO(im_png.tobytes()), media_type="image/jpg")
+        # Run the model and postpocess the output
+        with torch.no_grad():
+            prediction = midas(input_batch)
 
-	# 	# # plt.imshow(img)	
-	# 	# plt.imshow(output, alpha=0.8)
-	# plt.show()
-	return {"filenames": [file.filename for file in files]}
+            prediction = torch.nn.functional.interpolate(
+                prediction.unsqueeze(1),
+                size=img.shape[:2],
+                mode="bicubic",
+                align_corners=False,
+            ).squeeze()
+
+        output = prediction.cpu().numpy()
+
+        # Create a figure using matplotlib which super-imposes the original
+        # image and the prediction
+
+        fig = Figure()
+        canvas = FigureCanvas(fig)
+        ax = fig.gca()
+
+        # Render both images original as foreground
+        ax.imshow(img)
+        ax.imshow(output, cmap="jet", alpha=0.8)
+
+        ax.axis("off")
+        canvas.draw()
+
+        # Reshape output to be a numpy array
+        width, height = fig.get_size_inches() * fig.get_dpi()
+        width = int(width)
+        height = int(height)
+        output_image = np.frombuffer(canvas.tostring_rgb(),
+                                     dtype='uint8').reshape(height, width, 3)
+
+        # Encode to png
+        res, im_png = cv2.imencode(".png", output_image)
+        return StreamingResponse(io.BytesIO(im_png.tobytes()),
+                                 media_type="image/png")
 
 
 @app.get("/")
 async def main():
-	content = """
-	<body>
-		<form action="/uploadfiles/" enctype="multipart/form-data" method="post">
-			<input name="files" type="file" multiple>
-			<input type="submit">
-		</form>
-	</body>
-	"""
-	return HTMLResponse(content=content)
+    """Create a basic home page to upload a file
+
+    :return: HTML for homepage
+    :rtype: HTMLResponse
+    """
+
+    content = """
+<body>
+    <form action="/uploadfiles/" enctype="multipart/form-data" method="post">
+        <input name="files" type="file" multiple>
+        <input type="submit">
+    </form>
+</body>
+    """
+    return HTMLResponse(content=content)

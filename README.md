@@ -3,7 +3,7 @@
 ## What is in this repository?
 A repository with a demo on how to quickly deploy a machine learning model via FastAPI
 
-This is a quick and dirty way to deploy a model via FastAPI both on your computer and on Google Colab using Ngrok. I would highly recommend not using this as is.
+This is a quick and dirty way to deploy a model via FastAPI both on your computer and on Google Colab using Ngrok. I would highly recommend not using this as is and doing some processing cleanup and adding authentication for your API at least.
 
 Model being deployed: [Intel's MiDaS from PyTorch Hub](https://pytorch.org/hub/intelisl_midas_v2/)
 
