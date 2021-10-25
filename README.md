@@ -22,3 +22,5 @@ MiDaS computes relative inverse depth from a single image. The repository provid
 
 [Link to original paper for the model](https://arxiv.org/abs/1907.01341)
 
+
+[My curated list of courses](https://docs.google.com/document/d/1OtgTyLZHbKYVEw06-gljmlBiQKp4p97I5Zg7omnXhFU/edit?usp=sharing)
