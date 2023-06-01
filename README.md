@@ -1,5 +1,7 @@
 # Model Quick Deploy
 
+*This repository was made for a talk given in 2021 at Drexel ADS*
+
 ## What is in this repository?
 A repository with a demo on how to quickly deploy a machine learning model via FastAPI
 
